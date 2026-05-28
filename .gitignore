@@ -5,7 +5,7 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
-data/processed/*.parquet
 data/processed/*.csv
 data/zomato.csv
 !data/processed/.gitkeep
+!data/processed/restaurants.parquet
