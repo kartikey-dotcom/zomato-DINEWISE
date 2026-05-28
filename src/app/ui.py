@@ -192,16 +192,16 @@ settings = get_settings()
 repo = RestaurantRepository()
 
 if not settings.data_path.exists():
-    st.warning("⚠️ Zomato dataset has not been preprocessed yet. Let's bootstrap it first!")
-    if st.button("📥 Load & Bootstrap Zomato Dataset (Hugging Face)"):
-        with st.spinner("Downloading dataset, cleaning columns, and building Parquet cache... (takes ~30-60s)"):
-            try:
-                run_pipeline.run(force_refresh=True)
-                st.success("🎉 Data pipeline executed successfully! Re-loading...")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Failed to run pipeline: {e}")
-    st.stop()
+    st.info("📥 Bootstrapping Zomato dataset (downloading, cleaning, and caching)... This happens only once and takes ~30-45s.")
+    with st.spinner("Processing dataset from Hugging Face... Please wait."):
+        try:
+            settings.data_path.parent.mkdir(parents=True, exist_ok=True)
+            run_pipeline.run(force_refresh=True)
+            st.success("🎉 Dataset bootstrapped successfully! Loading application...")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Failed to bootstrap dataset: {e}")
+            st.stop()
 
 # Load repository
 try:

@@ -84,13 +84,12 @@ Since DineWise requires a Google Gemini API Key to power the AI-driven recommend
 Since the preprocessed `restaurants.parquet` is gitignored to keep the repository lightweight, the database must be bootstrapped upon the first deployment.
 
 > [!TIP]
-> DineWise has a built-in auto-bootstrapper. On the first launch, the app will detect that the data cache is missing and display a friendly setup screen.
+> DineWise has a built-in automated bootstrapper. On the first launch, the app will automatically detect that the data cache is missing and execute the loading pipeline in the background.
 
 1. Access your newly deployed Streamlit app URL.
-2. You will see a warning: **"⚠️ Zomato dataset has not been preprocessed yet. Let's bootstrap it first!"**
-3. Click the **"📥 Load & Bootstrap Zomato Dataset (Hugging Face)"** button.
-4. Streamlit will download the dataset directly from Hugging Face, clean the columns, compute budget bands, deduplicate entries, and build the optimized Parquet cache in the background (takes approx. 30-45 seconds).
-5. Once completed, the app will automatically refresh and be fully operational!
+2. The app will display an informational message: **"📥 Bootstrapping Zomato dataset (downloading, cleaning, and caching)..."**
+3. It will download the dataset directly from Hugging Face, clean the columns, compute budget bands, deduplicate entries, and build the optimized Parquet cache in the background (takes approx. 30-45 seconds).
+4. Once completed, the app will automatically refresh and display the fully loaded, beautiful DineWise search interface without requiring any manual clicks!
 
 ---
 
