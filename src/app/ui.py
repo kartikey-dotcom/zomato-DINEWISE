@@ -14,6 +14,12 @@ from src.services.recommendation_service import build_recommendation_service, Re
 from src.models.preferences import UserPreferences
 from src.data import run_pipeline
 
+@st.cache_resource
+def get_cached_repository(data_path: Path) -> RestaurantRepository:
+    repository = RestaurantRepository()
+    repository.load(data_path)
+    return repository
+
 # 1. Page Configuration & Custom CSS Injection
 st.set_page_config(
     page_title="DineWise",
@@ -189,7 +195,6 @@ st.markdown(
 
 # 3. Load Settings & Check Ingestion State
 settings = get_settings()
-repo = RestaurantRepository()
 
 if not settings.data_path.exists():
     st.info("📥 Bootstrapping Zomato dataset (downloading, cleaning, and caching)... This happens only once and takes ~30-45s.")
@@ -203,9 +208,9 @@ if not settings.data_path.exists():
             st.error(f"Failed to bootstrap dataset: {e}")
             st.stop()
 
-# Load repository
+# Load repository (cached)
 try:
-    repo.load(settings.data_path)
+    repo = get_cached_repository(settings.data_path)
 except Exception as e:
     st.error(f"Error loading restaurant repository: {e}")
     st.stop()
