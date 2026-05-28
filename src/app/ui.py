@@ -251,7 +251,7 @@ with st.container(border=True):
     # Cuisine text input
     cuisine_input = st.text_input(
         "Cuisine",
-        value="Italian",
+        value="",
         placeholder="e.g. Italian, Chinese, North Indian, Mughlai..."
     )
     
@@ -260,7 +260,7 @@ with st.container(border=True):
         "Minimum Rating",
         min_value=0.0,
         max_value=5.0,
-        value=4.0,
+        value=3.5,
         step=0.1,
         format="%f ★"
     )
