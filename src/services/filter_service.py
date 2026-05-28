@@ -54,10 +54,12 @@ class FilterService:
         preferences: UserPreferences,
         restaurants: list[Restaurant],
         max_candidates: int | None = None,
+        relax_if_empty: bool = False,
     ) -> FilterResult:
         cap = max_candidates if max_candidates is not None else self.max_candidates
         target_location = normalize_city(preferences.location)
 
+        # Stage 1: Try strict matching
         matched: list[Restaurant] = []
         for restaurant in restaurants:
             if not self._matches_location(restaurant, target_location):
@@ -70,6 +72,60 @@ class FilterService:
                 continue
             matched.append(restaurant)
 
+        relaxed_message = None
+
+        # Stage 2: Progressive Relaxation (only if relax_if_empty=True and we have < 2 matches)
+        if relax_if_empty and len(matched) < 2:
+            # 1. Try relaxing cuisine first (if set)
+            if preferences.cuisine:
+                cuisine_relaxed = []
+                for restaurant in restaurants:
+                    if not self._matches_location(restaurant, target_location):
+                        continue
+                    if round(restaurant.rating, 2) < round(preferences.min_rating, 2):
+                        continue
+                    if restaurant.budget_band != preferences.budget:
+                        continue
+                    cuisine_relaxed.append(restaurant)
+                if len(cuisine_relaxed) >= 2:
+                    matched = cuisine_relaxed
+                    relaxed_message = f"No perfect matches for cuisine '{preferences.cuisine}'. Showing other cuisines in {target_location}."
+
+            # 2. Try relaxing rating (drop rating constraint)
+            if len(matched) < 2:
+                rating_relaxed = []
+                for restaurant in restaurants:
+                    if not self._matches_location(restaurant, target_location):
+                        continue
+                    if not self._matches_cuisine(restaurant, preferences.cuisine):
+                        continue
+                    if restaurant.budget_band != preferences.budget:
+                        continue
+                    rating_relaxed.append(restaurant)
+                if len(rating_relaxed) >= 2:
+                    matched = rating_relaxed
+                    relaxed_message = f"No matches rated >= {preferences.min_rating}★. Showing best available options in {target_location}."
+
+            # 3. Try relaxing both rating and cuisine
+            if len(matched) < 2:
+                both_relaxed = []
+                for restaurant in restaurants:
+                    if not self._matches_location(restaurant, target_location):
+                        continue
+                    if restaurant.budget_band != preferences.budget:
+                        continue
+                    both_relaxed.append(restaurant)
+                if len(both_relaxed) >= 2:
+                    matched = both_relaxed
+                    relaxed_message = f"Showing options in {target_location} with relaxed constraints."
+
+            # 4. Absolute fallback: Return ALL restaurants in that location, sorted by rating desc
+            if len(matched) < 2:
+                all_in_location = [r for r in restaurants if self._matches_location(r, target_location)]
+                if all_in_location:
+                    matched = all_in_location
+                    relaxed_message = f"Showing all available restaurants in {target_location} sorted by rating."
+
         matched.sort(key=lambda r: r.rating, reverse=True)
         total_matched = len(matched)
         candidates = matched[:cap]
@@ -80,13 +136,16 @@ class FilterService:
             "cuisine": preferences.cuisine,
             "min_rating": preferences.min_rating,
         }
+        if relaxed_message:
+            filters_applied["relaxed_message"] = relaxed_message
 
         logger.info(
-            "Filter: %d matched, %d candidates (cap=%d) for location=%s",
+            "Filter: %d matched, %d candidates (cap=%d) for location=%s (relaxed=%s)",
             total_matched,
             len(candidates),
             cap,
             target_location,
+            relaxed_message is not None,
         )
 
         return FilterResult(

@@ -295,6 +295,11 @@ if submit_clicked:
     with st.spinner("Consulting DineWise AI recommender engine..."):
         response = service.get_recommendations(preferences)
         
+    # Render Auto-Relaxation notice if filters were relaxed
+    relaxed_msg = response.metadata.get("filters_applied", {}).get("relaxed_message")
+    if relaxed_msg:
+        st.info(f"ℹ️ {relaxed_msg}")
+        
     # Check if empty states
     if not response.items:
         st.info("ℹ️ " + (response.metadata.get("message") or "No restaurants matched your filters. Try relaxing rating or budget constraints!"))

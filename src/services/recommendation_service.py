@@ -31,6 +31,7 @@ class RecommendationService:
         prompt_builder: PromptBuilder | None = None,
         llm_client: LLMClient | None = None,
         settings: Settings | None = None,
+        relax_if_empty: bool = True,
     ) -> None:
         self._settings = settings or get_settings()
         self._repository = repository
@@ -39,6 +40,7 @@ class RecommendationService:
         )
         self._prompt_builder = prompt_builder or PromptBuilder(top_n=self._settings.top_n)
         self._llm_client = llm_client
+        self._relax_if_empty = relax_if_empty
 
     def _get_llm_client(self) -> LLMClient:
         if self._llm_client is not None:
@@ -51,7 +53,11 @@ class RecommendationService:
                 "Dataset not loaded. Run: python -m src.data.run_pipeline"
             )
 
-        filter_result = self._filter.filter(preferences, self._repository.all())
+        filter_result = self._filter.filter(
+            preferences, 
+            self._repository.all(), 
+            relax_if_empty=self._relax_if_empty
+        )
         metadata: dict = {
             "candidates_considered": len(filter_result.candidates),
             "total_matched": filter_result.total_matched,

@@ -62,6 +62,7 @@ class TestRecommendationService:
             repository=repo,
             filter_service=FilterService(),
             llm_client=llm,
+            relax_if_empty=False,
         )
         prefs = UserPreferences(
             location="Bangalore",
